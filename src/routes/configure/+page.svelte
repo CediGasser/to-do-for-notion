@@ -3,9 +3,10 @@
   import * as Field from '$lib/components/ui/field'
 
   import { getDataSources } from '$lib/notion'
-  import { PropertyMappingBuilder } from '$lib/abstraction/mapping.svelte'
+  import { DataSourceMapping } from '$lib/abstraction/mapping.svelte'
+  import Input from '$lib/components/ui/input/input.svelte'
 
-  const propertyMappingBuilder = new PropertyMappingBuilder()
+  const propertyMapping = new DataSourceMapping()
   const dataSourcesPromise = getDataSources()
 </script>
 
@@ -26,7 +27,7 @@
               items={dataSources}
               labelFn={(item) => item.title[0]?.plain_text || 'Untitled'}
               placeholder="Select a data source"
-              bind:value={propertyMappingBuilder.dataSource}
+              bind:value={propertyMapping.dataSource}
             />
           </Field.Field>
         {:catch error}
@@ -38,7 +39,7 @@
     </Field.Set>
     <Field.Separator class="my-4" />
     <Field.Set>
-      {#if propertyMappingBuilder.dataSource}
+      {#if propertyMapping.dataSource}
         <Field.Legend>Property Mapping</Field.Legend>
         <Field.Description>
           Map the properties from your Notion data source to the task fields.
@@ -50,10 +51,10 @@
             >
             <Select
               id="property-mapping-title"
-              items={propertyMappingBuilder.getPossiblePropertiesFor('title')}
+              items={propertyMapping.getPossiblePropertiesFor('title')}
               labelFn={(item) => item.name}
               placeholder="Select title property"
-              bind:value={propertyMappingBuilder.titleProperty}
+              bind:value={propertyMapping.titleProperty}
             />
           </Field.Field>
           <Field.Field>
@@ -62,12 +63,10 @@
             >
             <Select
               id="property-mapping-completed"
-              items={propertyMappingBuilder.getPossiblePropertiesFor(
-                'completed'
-              )}
+              items={propertyMapping.getPossiblePropertiesFor('completed')}
               labelFn={(item) => item.name}
               placeholder="Select completed property"
-              bind:value={propertyMappingBuilder.completedProperty}
+              bind:value={propertyMapping.completedProperty}
             />
           </Field.Field>
           <Field.Field>
@@ -76,10 +75,25 @@
             >
             <Select
               id="property-mapping-due-date"
-              items={propertyMappingBuilder.getPossiblePropertiesFor('dueDate')}
+              items={propertyMapping.getPossiblePropertiesFor('dueDate')}
               labelFn={(item) => item.name}
               placeholder="Select due date property"
-              bind:value={propertyMappingBuilder.dueDateProperty}
+              bind:value={propertyMapping.dueDateProperty}
+            />
+          </Field.Field>
+          <Field.Field>
+            <Field.Label for="property-mapping-category"
+              >Category Property</Field.Label
+            >
+            <Field.Description>
+              (Optional) You'll see tasks grouped by category in the app.
+            </Field.Description>
+            <Select
+              id="property-mapping-category"
+              items={propertyMapping.getPossiblePropertiesFor('category')}
+              labelFn={(item) => item.name}
+              placeholder="Select category property"
+              bind:value={propertyMapping.categoryProperty}
             />
           </Field.Field>
           <Field.Field>
@@ -88,12 +102,10 @@
             >
             <Select
               id="property-mapping-priority"
-              items={propertyMappingBuilder.getPossiblePropertiesFor(
-                'priority'
-              )}
+              items={propertyMapping.getPossiblePropertiesFor('priority')}
               labelFn={(item) => item.name}
               placeholder="Select priority property"
-              bind:value={propertyMappingBuilder.priorityProperty}
+              bind:value={propertyMapping.priorityProperty}
             />
           </Field.Field>
           <Field.Field>
@@ -102,14 +114,20 @@
             >
             <Select
               id="property-mapping-do-date"
-              items={propertyMappingBuilder.getPossiblePropertiesFor('doDate')}
+              items={propertyMapping.getPossiblePropertiesFor('doDate')}
               labelFn={(item) => item.name}
               placeholder="Select do date property"
-              bind:value={propertyMappingBuilder.doDateProperty}
+              bind:value={propertyMapping.doDateProperty}
             />
           </Field.Field>
         </Field.Group>
       {/if}
     </Field.Set>
+    <Input
+      type="submit"
+      value="Save Configuration"
+      class="mt-6"
+      disabled={!propertyMapping.isValidMapping}
+    />
   </form>
 </main>
