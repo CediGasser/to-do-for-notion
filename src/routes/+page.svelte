@@ -9,6 +9,9 @@
 </script>
 
 <main>
+  <nav>
+    <a href="/configure" class="text-blue-500 underline">Configure</a>
+  </nav>
   <h1 class="text-4xl font-bold mb-8">Databases:</h1>
   <ul class="list-disc list-inside mb-12">
     {#each data.dataSources as dataSource}
@@ -38,14 +41,26 @@
       {:else}
         <ul class="list-disc list-inside">
           {#each entriesData as entry}
-            <span>{entry.properties.Description.richt_text.plain_text}</span>
-            <span>{entry.properties.Status.status.name}</span>
-            <pre class="text-xs">{JSON.stringify(entry, null, 2)}</pre>
+            <span
+              >{(entry.properties.Description as any)?.rich_text[0]
+                ?.plain_text}</span
+            >
+            <span class="text-green-300"
+              >{(entry.properties.Status as any)?.status?.name}</span
+            >
+            <summary>
+              -
+              <details>
+                <pre class="text-xs">{JSON.stringify(entry, null, 2)}</pre>
+              </details>
+            </summary>
           {/each}
         </ul>
       {/if}
     {:catch error}
-      <p class="text-red-500">Error loading entries: {error.message}</p>
+      <p class="text-red-500">
+        Error loading entries: {JSON.stringify(error, null, 2)}
+      </p>
     {/await}
   </div>
 
