@@ -1,6 +1,7 @@
 <script lang="ts" module>
   // sample data
   const data = {
+    databases: ['Tasks', 'Projects', 'Notes'],
     navMain: [
       {
         title: 'Getting Started',
@@ -146,6 +147,7 @@
   import CheckCheckIcon from '@lucide/svelte/icons/check-check'
   import { version } from '$app/environment'
   import type { ComponentProps } from 'svelte'
+  import NotionDbSwitcher from './notion-db-switcher.svelte'
 
   let {
     ref = $bindable(null),
@@ -155,25 +157,10 @@
 
 <Sidebar.Root variant="floating" {...restProps}>
   <Sidebar.Header>
-    <Sidebar.Menu>
-      <Sidebar.MenuItem>
-        <Sidebar.MenuButton size="lg">
-          {#snippet child({ props })}
-            <a href="##" {...props}>
-              <div
-                class="bg-sidebar-primary text-sidebar-primary-foreground flex aspect-square size-8 items-center justify-center rounded-lg"
-              >
-                <CheckCheckIcon class="size-4" />
-              </div>
-              <div class="flex flex-col gap-0.5 leading-none">
-                <span class="font-medium">To Do for Notion</span>
-                <span class="">{version}</span>
-              </div>
-            </a>
-          {/snippet}
-        </Sidebar.MenuButton>
-      </Sidebar.MenuItem>
-    </Sidebar.Menu>
+    <NotionDbSwitcher
+      databases={data.databases}
+      defaultDatabase={data.databases[0]}
+    />
   </Sidebar.Header>
   <Sidebar.Content>
     <Sidebar.Group>
