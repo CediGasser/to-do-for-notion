@@ -3,16 +3,27 @@
   import * as Field from '$lib/components/ui/field'
 
   import { getDataSources } from '$lib/notion'
-  import { DataSourceMapping } from '$lib/abstraction/mapping.svelte'
+  import {
+    DataSourceMapping,
+    registerMapping,
+  } from '$lib/abstraction/mapping.svelte'
   import Input from '$lib/components/ui/input/input.svelte'
+  import { goto } from '$app/navigation'
 
-  const propertyMapping = new DataSourceMapping()
   const dataSourcesPromise = getDataSources()
+
+  let propertyMapping = new DataSourceMapping()
+
+  const handleSubmit = (e: Event) => {
+    e.preventDefault()
+    registerMapping(propertyMapping.dataSource!.id, propertyMapping)
+    goto('/default')
+  }
 </script>
 
 <main class="flex flex-col min-h-screen py-8 px-4 max-w-xl mx-auto">
   <h1 class="text-4xl font-bold mb-8">Configure</h1>
-  <form>
+  <form onsubmit={handleSubmit}>
     <Field.Set>
       <Field.Group>
         {#await dataSourcesPromise}
