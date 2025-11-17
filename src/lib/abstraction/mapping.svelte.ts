@@ -1,11 +1,8 @@
-import type { SimpleTask } from '$lib/types'
+import type { SimpleTask, PropertyDefinition, Property } from '$lib/types'
 import type {
   DataSourceObjectResponse,
   PageObjectResponse,
 } from '@notionhq/client'
-
-type PropertyType =
-  DataSourceObjectResponse['properties'][keyof DataSourceObjectResponse['properties']]
 
 export const mappings = new Map<string, DataSourceMapping>()
 
@@ -23,9 +20,9 @@ export const getMappingForDataSource = (
 }
 
 class PropertyMapping {
-  public notionPropertyDefinition: PropertyType
+  public notionPropertyDefinition: PropertyDefinition
 
-  constructor(notionPropertyDefinition: PropertyType) {
+  constructor(notionPropertyDefinition: PropertyDefinition) {
     this.notionPropertyDefinition = notionPropertyDefinition
   }
 
@@ -41,19 +38,41 @@ class PropertyMapping {
 export class DataSourceMapping {
   public dataSource: DataSourceObjectResponse | null = $state(null)
 
-  public titleProperty: PropertyType | null = $state(null)
-  public completedProperty: PropertyType | null = $state(null)
-  public categoryProperty: PropertyType | null = $state(null)
-  public dueDateProperty: PropertyType | null = $state(null)
-  public priorityProperty: PropertyType | null = $state(null)
-  public doDateProperty: PropertyType | null = $state(null)
+  public titleProperty: PropertyDefinition | null = $state(null)
+  public completedProperty: PropertyDefinition | null = $state(null)
+  public categoryProperty: PropertyDefinition | null = $state(null)
+  public dueDateProperty: PropertyDefinition | null = $state(null)
+  public priorityProperty: PropertyDefinition | null = $state(null)
+  public doDateProperty: PropertyDefinition | null = $state(null)
 
   // A mapping is valid if at least the title and completed properties are set
   public isValidMapping = $derived(this.titleProperty && this.completedProperty)
 
+  public getMappedProperty = (
+    propertyName: keyof Omit<SimpleTask, 'id'>,
+    notionPage: PageObjectResponse
+  ): Property => {
+    switch (propertyName) {
+      case 'title':
+        return notionPage.properties[this.titleProperty?.name || '']
+      case 'completed':
+        return notionPage.properties[this.completedProperty?.name || '']
+      case 'category':
+        return notionPage.properties[this.categoryProperty?.name || '']
+      case 'dueDate':
+        return notionPage.properties[this.dueDateProperty?.name || '']
+      case 'priority':
+        return notionPage.properties[this.priorityProperty?.name || '']
+      case 'doDate':
+        return notionPage.properties[this.doDateProperty?.name || '']
+      default:
+        throw new Error(`Unknown property name: ${propertyName}`)
+    }
+  }
+
   // Mapping methods for two way conversion between SimpleTask and Notion properties
   public fromNotion = (notionPage: PageObjectResponse): SimpleTask => {
-    const getPropertyValue = (property: PropertyType | null) => {
+    const getPropertyValue = (property: PropertyDefinition | null) => {
       if (!property) {
         return null
       }
@@ -76,16 +95,16 @@ export class DataSourceMapping {
   // Get possible properties for a given SimpleTask property
   getPossiblePropertiesFor(
     propertyName: keyof Omit<SimpleTask, 'id'>
-  ): PropertyType[] {
+  ): PropertyDefinition[] {
     if (!this.dataSource) {
       return []
     }
 
     const propertyTypeMap: Record<
       keyof Omit<SimpleTask, 'id'>,
-      PropertyType['type'][]
+      PropertyDefinition['type'][]
     > = {
-      title: ['title', 'rich_text'],
+      title: ['title'],
       completed: ['checkbox', 'status'],
       category: ['select', 'multi_select', 'rich_text'],
       dueDate: ['date'],

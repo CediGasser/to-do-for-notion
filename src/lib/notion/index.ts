@@ -1,6 +1,7 @@
 import { PUBLIC_NOTION_INTEGRATION_SECRET } from '$env/static/public'
 import { Client, isFullDataSource, isFullPage } from '@notionhq/client'
 import { fetch } from '@tauri-apps/plugin-http'
+import type { UpdatePageParameters } from '@notionhq/client'
 
 const client = new Client({
   auth: PUBLIC_NOTION_INTEGRATION_SECRET,
@@ -43,4 +44,14 @@ export const getEntriesFromDataSource = async (dataSourceId: string) => {
     .filter((page) => !page.archived && !page.in_trash)
 
   return entries
+}
+
+export const updatePageProperties = async (
+  pageId: string,
+  properties: UpdatePageParameters['properties']
+) => {
+  await client.pages.update({
+    page_id: pageId,
+    properties: properties,
+  })
 }

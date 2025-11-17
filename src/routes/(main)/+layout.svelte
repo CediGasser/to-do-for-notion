@@ -17,7 +17,7 @@
         orientation="vertical"
         class="mr-2 data-[orientation=vertical]:h-4"
       />
-      <h2>{listName}</h2>
+      <h2 class="text-2xl font-bold">{listName}</h2>
     </header>
     <main class="flex flex-1 flex-col gap-4 p-4 pt-0">
       {@render children?.()}
