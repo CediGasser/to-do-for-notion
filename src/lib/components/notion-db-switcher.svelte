@@ -1,17 +1,26 @@
 <script lang="ts">
+  import { goto } from '$app/navigation'
   import * as DropdownMenu from '$lib/components/ui/dropdown-menu/index.js'
   import * as Sidebar from '$lib/components/ui/sidebar/index.js'
   import CheckIcon from '@lucide/svelte/icons/check'
+  import CheckCheckIcon from '@lucide/svelte/icons/check-check'
   import ChevronsUpDownIcon from '@lucide/svelte/icons/chevrons-up-down'
-  import GalleryVerticalEndIcon from '@lucide/svelte/icons/gallery-vertical-end'
+  import type { DataSourceObjectResponse } from '@notionhq/client'
 
   interface Props {
-    databases: string[]
-    defaultDatabase: string
+    dataSources: DataSourceObjectResponse[]
+    selectedDataSourceId: string
   }
-  let { databases, defaultDatabase }: Props = $props()
 
-  let selectedDatabase = $state(defaultDatabase)
+  let { dataSources, selectedDataSourceId = $bindable() }: Props = $props()
+
+  let selectedDataSource = $derived.by(() =>
+    dataSources.find((ds) => ds.id === selectedDataSourceId)
+  )
+
+  const handleSelect = () => {
+    goto(`/${selectedDataSourceId}/default`)
+  }
 </script>
 
 <Sidebar.Menu>
@@ -27,11 +36,13 @@
             <div
               class="bg-sidebar-primary text-sidebar-primary-foreground flex aspect-square size-8 items-center justify-center rounded-lg"
             >
-              <GalleryVerticalEndIcon class="size-4" />
+              <CheckCheckIcon class="size-4" />
             </div>
             <div class="flex flex-col gap-0.5 leading-none">
               <span class="font-medium">To Do for Notion</span>
-              <span class="">{selectedDatabase}</span>
+              <span class=""
+                >{selectedDataSource?.title[0]?.plain_text || 'Untitled'}</span
+              >
             </div>
             <ChevronsUpDownIcon class="ml-auto" />
           </Sidebar.MenuButton>
@@ -41,10 +52,12 @@
         class="w-(--bits-dropdown-menu-anchor-width)"
         align="start"
       >
-        {#each databases as database (database)}
-          <DropdownMenu.Item onSelect={() => (selectedDatabase = database)}>
-            {database}
-            {#if database === selectedDatabase}
+        {#each dataSources as dataSource (dataSource)}
+          <DropdownMenu.Item
+            onSelect={() => (selectedDataSourceId = dataSource.id)}
+          >
+            {dataSource.title[0]?.plain_text || 'Untitled'}
+            {#if dataSource.id === selectedDataSourceId}
               <CheckIcon class="ml-auto" />
             {/if}
           </DropdownMenu.Item>

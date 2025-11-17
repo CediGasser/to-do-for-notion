@@ -2,14 +2,20 @@
   import * as Sidebar from '$lib/components/ui/sidebar'
   import { Separator } from '$lib/components/ui/separator'
   import AppSidebar from '$lib/components/app-sidebar.svelte'
+  import { setMappingContext } from '$lib/abstraction/mapping.svelte'
 
-  let { children } = $props()
+  let { children, data } = $props()
 
   let listName = 'Tasks'
+
+  setMappingContext(data.mapping)
 </script>
 
 <Sidebar.Provider style="--sidebar-width: 19rem;">
-  <AppSidebar />
+  <AppSidebar
+    dataSources={data.dataSources}
+    selectedDataSourceId={data.selectedDataSourceId ?? ''}
+  />
   <Sidebar.Inset>
     <header class="flex h-16 shrink-0 items-center gap-2 px-4">
       <Sidebar.Trigger class="-ml-1" />

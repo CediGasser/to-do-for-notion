@@ -18,6 +18,13 @@ export type Property = PageObjectResponse['properties'][string]
 export type PropertyDefinition =
   DataSourceObjectResponse['properties'][keyof DataSourceObjectResponse['properties']]
 
+export type OptionDefinition = {
+  id: string
+  name: string
+  color: SelectColor
+  description?: string
+}
+
 export type SelectColor =
   | 'default'
   | 'gray'

@@ -1,7 +1,6 @@
 <script lang="ts" module>
   // sample data
   const data = {
-    databases: ['Tasks', 'Projects', 'Notes'],
     navMain: [
       {
         title: 'Getting Started',
@@ -144,23 +143,19 @@
 
 <script lang="ts">
   import * as Sidebar from '$lib/components/ui/sidebar/index.js'
-  import CheckCheckIcon from '@lucide/svelte/icons/check-check'
-  import { version } from '$app/environment'
-  import type { ComponentProps } from 'svelte'
   import NotionDbSwitcher from './notion-db-switcher.svelte'
+  import type { DataSourceObjectResponse } from '@notionhq/client'
 
-  let {
-    ref = $bindable(null),
-    ...restProps
-  }: ComponentProps<typeof Sidebar.Root> = $props()
+  interface Props {
+    dataSources: DataSourceObjectResponse[]
+    selectedDataSourceId: string
+  }
+  let { dataSources, selectedDataSourceId }: Props = $props()
 </script>
 
-<Sidebar.Root variant="floating" {...restProps}>
+<Sidebar.Root variant="floating">
   <Sidebar.Header>
-    <NotionDbSwitcher
-      databases={data.databases}
-      defaultDatabase={data.databases[0]}
-    />
+    <NotionDbSwitcher {dataSources} {selectedDataSourceId} />
   </Sidebar.Header>
   <Sidebar.Content>
     <Sidebar.Group>

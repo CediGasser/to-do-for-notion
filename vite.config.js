@@ -1,5 +1,6 @@
+import { defineConfig } from "vitest/config";
+import { playwright } from "@vitest/browser-playwright";
 import tailwindcss from "@tailwindcss/vite";
-import { defineConfig } from "vite";
 import { sveltekit } from "@sveltejs/kit/vite";
 
 // @ts-expect-error process is a nodejs global
@@ -20,5 +21,32 @@ export default defineConfig(async () => ({
     hmr: host ? { protocol: "ws", host, port: 1421 } : undefined,
     watch: { // 3. tell Vite to ignore watching `src-tauri`
     ignored: ["**/src-tauri/**"] }
+  },
+  test: {
+    expect: { requireAssertions: true },
+    projects: [
+      {
+        extends: "./vite.config.js",
+        test: {
+          name: "client",
+          browser: {
+            enabled: true,
+            provider: playwright(),
+            instances: [{ browser: "chromium", headless: true }]
+          },
+          include: ["src/**/*.svelte.{test,spec}.{js,ts}"],
+          exclude: ["src/lib/server/**"]
+        }
+      },
+      {
+        extends: "./vite.config.js",
+        test: {
+          name: "server",
+          environment: "node",
+          include: ["src/**/*.{test,spec}.{js,ts}"],
+          exclude: ["src/**/*.svelte.{test,spec}.{js,ts}"]
+        }
+      }
+    ]
   }
 }));

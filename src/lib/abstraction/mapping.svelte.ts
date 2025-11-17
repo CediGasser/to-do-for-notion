@@ -1,41 +1,88 @@
-import type { SimpleTask, PropertyDefinition, Property } from '$lib/types'
+import type {
+  OptionDefinition,
+  SimpleTask,
+  PropertyDefinition,
+  Property,
+} from '$lib/types'
 import type {
   DataSourceObjectResponse,
   PageObjectResponse,
 } from '@notionhq/client'
+import { createContext } from 'svelte'
 
-export const mappings = new Map<string, DataSourceMapping>()
+export const [getMappingContext, setMappingContext] =
+  createContext<DataSourceMapping>()
 
-export const registerMapping = (
-  dataSourceId: string,
-  mapping: DataSourceMapping
-): void => {
-  mappings.set(dataSourceId, mapping)
-}
+export class PropertyMapping {
+  public notionPropertyId: string
 
-export const getMappingForDataSource = (
-  dataSourceId: string
-): DataSourceMapping | null => {
-  return mappings.get(dataSourceId) || null
-}
-
-class PropertyMapping {
-  public notionPropertyDefinition: PropertyDefinition
-
-  constructor(notionPropertyDefinition: PropertyDefinition) {
-    this.notionPropertyDefinition = notionPropertyDefinition
+  constructor(notionPropertyId: string) {
+    this.notionPropertyId = notionPropertyId
   }
 
-  public toString = (): string => {
-    if (!this.notionPropertyDefinition) {
-      return 'Not mapped'
+  toJSON = (): any => {
+    return {
+      __type: 'PropertyMapping',
+      notionPropertyId: this.notionPropertyId,
     }
+  }
+}
 
-    return `${this.notionPropertyDefinition.name} (${this.notionPropertyDefinition.type})`
+export class EnumToBooleanPropertyMapping extends PropertyMapping {
+  public trueValueId: string
+  public falseValueId: string
+
+  constructor(
+    notionPropertyId: string,
+    trueValueId: string,
+    falseValueId: string
+  ) {
+    super(notionPropertyId)
+    this.trueValueId = trueValueId
+    this.falseValueId = falseValueId
+  }
+
+  toJSON = (): any => {
+    return {
+      __type: 'EnumToBooleanPropertyMapping',
+      notionPropertyId: this.notionPropertyId,
+      trueValueId: this.trueValueId,
+      falseValueId: this.falseValueId,
+    }
   }
 }
 
 export class DataSourceMapping {
+  public propertyMappings: Record<string, PropertyMapping> = {}
+
+  constructor(propertyMappings: Record<string, PropertyMapping>) {
+    this.propertyMappings = propertyMappings
+  }
+
+  public getPropertyFor = (
+    propertyName: keyof Omit<SimpleTask, 'id'>,
+    notionPage: PageObjectResponse
+  ): Property | null => {
+    const propertyMapping = this.propertyMappings[propertyName]
+    if (!propertyMapping) {
+      return null
+    }
+
+    // The key in notionPage.properties is not the property ID, so we need to find it by ID
+    return Object.values(notionPage.properties).find(
+      (prop) => prop.id === propertyMapping.notionPropertyId
+    ) as Property | null
+  }
+
+  toJSON = (): any => {
+    return {
+      __type: 'DataSourceMapping',
+      propertyMappings: this.propertyMappings,
+    }
+  }
+}
+
+export class DataSourceMappingBuilder {
   public dataSource: DataSourceObjectResponse | null = $state(null)
 
   public titleProperty: PropertyDefinition | null = $state(null)
@@ -45,52 +92,32 @@ export class DataSourceMapping {
   public priorityProperty: PropertyDefinition | null = $state(null)
   public doDateProperty: PropertyDefinition | null = $state(null)
 
+  public completedEnumTrueOption: OptionDefinition | null = $state(null)
+  public completedEnumFalseOption: OptionDefinition | null = $state(null)
+
   // A mapping is valid if at least the title and completed properties are set
-  public isValidMapping = $derived(this.titleProperty && this.completedProperty)
+  public isValidMapping = $derived.by(() => {
+    const mandatoryPropertiesExist =
+      this.titleProperty !== null && this.completedProperty !== null
 
-  public getMappedProperty = (
-    propertyName: keyof Omit<SimpleTask, 'id'>,
-    notionPage: PageObjectResponse
-  ): Property => {
-    switch (propertyName) {
-      case 'title':
-        return notionPage.properties[this.titleProperty?.name || '']
-      case 'completed':
-        return notionPage.properties[this.completedProperty?.name || '']
-      case 'category':
-        return notionPage.properties[this.categoryProperty?.name || '']
-      case 'dueDate':
-        return notionPage.properties[this.dueDateProperty?.name || '']
-      case 'priority':
-        return notionPage.properties[this.priorityProperty?.name || '']
-      case 'doDate':
-        return notionPage.properties[this.doDateProperty?.name || '']
-      default:
-        throw new Error(`Unknown property name: ${propertyName}`)
-    }
-  }
+    const dataSourceExists = this.dataSource !== null
 
-  // Mapping methods for two way conversion between SimpleTask and Notion properties
-  public fromNotion = (notionPage: PageObjectResponse): SimpleTask => {
-    const getPropertyValue = (property: PropertyDefinition | null) => {
-      if (!property) {
-        return null
-      }
+    const completedPropertyValid =
+      this.completedProperty?.type !== 'status' ||
+      (this.completedEnumTrueOption !== null &&
+        this.completedEnumFalseOption !== null)
 
-      return (notionPage.properties[property.name] as any)[property.type]
-    }
+    const completedPropertyOptionsNotEqual =
+      this.completedProperty?.type !== 'status' ||
+      this.completedEnumTrueOption?.id !== this.completedEnumFalseOption?.id
 
-    return {
-      id: notionPage.id,
-      title: getPropertyValue(this.titleProperty)?.[0].plain_text || '',
-      completed:
-        getPropertyValue(this.completedProperty)?.name === 'Done' || false,
-      category: getPropertyValue(this.categoryProperty)?.[0].name || '',
-      dueDate: getPropertyValue(this.dueDateProperty)?.start || '',
-      priority: getPropertyValue(this.priorityProperty)?.name || '',
-      doDate: getPropertyValue(this.doDateProperty)?.start || '',
-    }
-  }
+    return (
+      mandatoryPropertiesExist &&
+      dataSourceExists &&
+      completedPropertyValid &&
+      completedPropertyOptionsNotEqual
+    )
+  })
 
   // Get possible properties for a given SimpleTask property
   getPossiblePropertiesFor(
@@ -117,5 +144,68 @@ export class DataSourceMapping {
     return Object.entries(this.dataSource.properties)
       .filter(([_, prop]) => desiredTypes.includes(prop.type))
       .map(([_, prop]) => prop)
+  }
+
+  getPossibleEnumsFor(
+    property: PropertyDefinition
+  ): { id: string; name: string }[] {
+    if (property.type !== 'status' && property.type !== 'select') {
+      return []
+    }
+
+    const options =
+      property.type === 'status'
+        ? property.status?.options || []
+        : property.select?.options || []
+
+    return options.map((option) => ({ id: option.id, name: option.name }))
+  }
+
+  buildMapping(): DataSourceMapping {
+    if (!this.isValidMapping) {
+      throw new Error('Cannot build mapping: mapping is not valid')
+    }
+
+    const propertyMappings: Record<string, PropertyMapping> = {}
+
+    if (this.titleProperty) {
+      propertyMappings['title'] = new PropertyMapping(this.titleProperty.id)
+    }
+
+    if (this.completedProperty) {
+      if (this.completedProperty.type === 'status') {
+        propertyMappings['completed'] = new EnumToBooleanPropertyMapping(
+          this.completedProperty.id,
+          this.completedEnumTrueOption?.id!,
+          this.completedEnumFalseOption?.id!
+        )
+      } else {
+        propertyMappings['completed'] = new PropertyMapping(
+          this.completedProperty.id
+        )
+      }
+    }
+
+    if (this.categoryProperty) {
+      propertyMappings['category'] = new PropertyMapping(
+        this.categoryProperty.id
+      )
+    }
+
+    if (this.dueDateProperty) {
+      propertyMappings['dueDate'] = new PropertyMapping(this.dueDateProperty.id)
+    }
+
+    if (this.priorityProperty) {
+      propertyMappings['priority'] = new PropertyMapping(
+        this.priorityProperty.id
+      )
+    }
+
+    if (this.doDateProperty) {
+      propertyMappings['doDate'] = new PropertyMapping(this.doDateProperty.id)
+    }
+
+    return new DataSourceMapping(propertyMappings)
   }
 }

@@ -1,23 +1,32 @@
 <script lang="ts">
   import Select from '$lib/components/custom/select.svelte'
   import * as Field from '$lib/components/ui/field'
-
-  import { getDataSources } from '$lib/notion'
-  import {
-    DataSourceMapping,
-    registerMapping,
-  } from '$lib/abstraction/mapping.svelte'
+  import { DataSourceMappingBuilder } from '$lib/abstraction/mapping.svelte'
+  import config from '$lib/config'
   import Input from '$lib/components/ui/input/input.svelte'
   import { goto } from '$app/navigation'
 
-  const dataSourcesPromise = getDataSources()
+  let { data } = $props()
 
-  let propertyMapping = new DataSourceMapping()
+  let propertyMappingBuilder = new DataSourceMappingBuilder()
 
-  const handleSubmit = (e: Event) => {
+  const handleSubmit = async (e: Event) => {
     e.preventDefault()
-    registerMapping(propertyMapping.dataSource!.id, propertyMapping)
-    goto('/default')
+    // build the mapping
+    const mapping = propertyMappingBuilder.buildMapping()
+    const dataSourceId = propertyMappingBuilder.dataSource?.id
+
+    if (!dataSourceId) {
+      console.error('No data source selected')
+      return
+    }
+
+    // save the mapping to config
+    config.dataSourceMappings[dataSourceId] = mapping
+    config.defaultDataSourceId = dataSourceId
+    config.save()
+
+    goto(`/${dataSourceId}/default`)
   }
 </script>
 
@@ -26,31 +35,23 @@
   <form onsubmit={handleSubmit}>
     <Field.Set>
       <Field.Group>
-        {#await dataSourcesPromise}
-          <p>Loading data sources...</p>
-        {:then dataSources}
-          <Field.Field>
-            <Field.Label for="data-source-select">
-              Select a Notion Data Source
-            </Field.Label>
-            <Select
-              id="data-source-select"
-              items={dataSources}
-              labelFn={(item) => item.title[0]?.plain_text || 'Untitled'}
-              placeholder="Select a data source"
-              bind:value={propertyMapping.dataSource}
-            />
-          </Field.Field>
-        {:catch error}
-          <p class="text-red-500">
-            Error loading data sources: {error.message}
-          </p>
-        {/await}
+        <Field.Field>
+          <Field.Label for="data-source-select">
+            Select a Notion Data Source
+          </Field.Label>
+          <Select
+            id="data-source-select"
+            items={data.dataSources}
+            labelFn={(item) => item.title[0]?.plain_text || 'Untitled'}
+            placeholder="Select a data source"
+            bind:value={propertyMappingBuilder.dataSource}
+          />
+        </Field.Field>
       </Field.Group>
     </Field.Set>
     <Field.Separator class="my-4" />
     <Field.Set>
-      {#if propertyMapping.dataSource}
+      {#if propertyMappingBuilder.dataSource}
         <Field.Legend>Property Mapping</Field.Legend>
         <Field.Description>
           Map the properties from your Notion data source to the task fields.
@@ -62,34 +63,69 @@
             >
             <Select
               id="property-mapping-title"
-              items={propertyMapping.getPossiblePropertiesFor('title')}
+              items={propertyMappingBuilder.getPossiblePropertiesFor('title')}
               labelFn={(item) => item.name}
               placeholder="Select title property"
-              bind:value={propertyMapping.titleProperty}
+              bind:value={propertyMappingBuilder.titleProperty}
             />
           </Field.Field>
-          <Field.Field>
-            <Field.Label for="property-mapping-completed"
-              >Completed Property</Field.Label
-            >
-            <Select
-              id="property-mapping-completed"
-              items={propertyMapping.getPossiblePropertiesFor('completed')}
-              labelFn={(item) => item.name}
-              placeholder="Select completed property"
-              bind:value={propertyMapping.completedProperty}
-            />
-          </Field.Field>
+          <Field.Set>
+            <Field.Field>
+              <Field.Label for="property-mapping-completed"
+                >Completed Property</Field.Label
+              >
+              <Select
+                id="property-mapping-completed"
+                items={propertyMappingBuilder.getPossiblePropertiesFor(
+                  'completed'
+                )}
+                labelFn={(item) => item.name}
+                placeholder="Select completed property"
+                bind:value={propertyMappingBuilder.completedProperty}
+              />
+            </Field.Field>
+            {#if propertyMappingBuilder.completedProperty?.type === 'status'}
+              <Field.Field>
+                <Field.Description>
+                  Select the status that represents an incomplete task.
+                </Field.Description>
+                <Select
+                  id="property-mapping-completed-false-id"
+                  items={propertyMappingBuilder.getPossibleEnumsFor(
+                    propertyMappingBuilder.completedProperty
+                  )}
+                  labelFn={(item) => item.name}
+                  placeholder="Select completed checkbox false value"
+                  bind:value={propertyMappingBuilder.completedEnumFalseOption}
+                />
+              </Field.Field>
+              <Field.Field>
+                <Field.Description>
+                  Select the status that represents a completed task.
+                </Field.Description>
+                <Select
+                  id="property-mapping-completed-true-id"
+                  items={propertyMappingBuilder.getPossibleEnumsFor(
+                    propertyMappingBuilder.completedProperty
+                  )}
+                  labelFn={(item) => item.name}
+                  placeholder="Select completed checkbox true value"
+                  bind:value={propertyMappingBuilder.completedEnumTrueOption}
+                />
+              </Field.Field>
+            {/if}
+          </Field.Set>
+          <Field.Separator class="my-4" />
           <Field.Field>
             <Field.Label for="property-mapping-due-date"
               >Due Date Property</Field.Label
             >
             <Select
               id="property-mapping-due-date"
-              items={propertyMapping.getPossiblePropertiesFor('dueDate')}
+              items={propertyMappingBuilder.getPossiblePropertiesFor('dueDate')}
               labelFn={(item) => item.name}
               placeholder="Select due date property"
-              bind:value={propertyMapping.dueDateProperty}
+              bind:value={propertyMappingBuilder.dueDateProperty}
             />
           </Field.Field>
           <Field.Field>
@@ -101,10 +137,12 @@
             </Field.Description>
             <Select
               id="property-mapping-category"
-              items={propertyMapping.getPossiblePropertiesFor('category')}
+              items={propertyMappingBuilder.getPossiblePropertiesFor(
+                'category'
+              )}
               labelFn={(item) => item.name}
               placeholder="Select category property"
-              bind:value={propertyMapping.categoryProperty}
+              bind:value={propertyMappingBuilder.categoryProperty}
             />
           </Field.Field>
           <Field.Field>
@@ -113,10 +151,12 @@
             >
             <Select
               id="property-mapping-priority"
-              items={propertyMapping.getPossiblePropertiesFor('priority')}
+              items={propertyMappingBuilder.getPossiblePropertiesFor(
+                'priority'
+              )}
               labelFn={(item) => item.name}
               placeholder="Select priority property"
-              bind:value={propertyMapping.priorityProperty}
+              bind:value={propertyMappingBuilder.priorityProperty}
             />
           </Field.Field>
           <Field.Field>
@@ -125,10 +165,10 @@
             >
             <Select
               id="property-mapping-do-date"
-              items={propertyMapping.getPossiblePropertiesFor('doDate')}
+              items={propertyMappingBuilder.getPossiblePropertiesFor('doDate')}
               labelFn={(item) => item.name}
               placeholder="Select do date property"
-              bind:value={propertyMapping.doDateProperty}
+              bind:value={propertyMappingBuilder.doDateProperty}
             />
           </Field.Field>
         </Field.Group>
@@ -138,7 +178,7 @@
       type="submit"
       value="Save Configuration"
       class="mt-6"
-      disabled={!propertyMapping.isValidMapping}
+      disabled={!propertyMappingBuilder.isValidMapping}
     />
   </form>
 </main>
