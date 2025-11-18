@@ -8,10 +8,6 @@ import type {
   DataSourceObjectResponse,
   PageObjectResponse,
 } from '@notionhq/client'
-import { createContext } from 'svelte'
-
-export const [getMappingContext, setMappingContext] =
-  createContext<DataSourceMapping>()
 
 export class PropertyMapping {
   public notionPropertyId: string

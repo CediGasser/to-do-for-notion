@@ -1,147 +1,33 @@
 <script lang="ts" module>
   // sample data
   const data = {
-    navMain: [
+    mainLists: [
       {
-        title: 'Getting Started',
-        url: '#',
-        items: [
-          {
-            title: 'Installation',
-            url: '#',
-          },
-          {
-            title: 'Project Structure',
-            url: '#',
-          },
-        ],
+        title: 'My Day',
+        url: 'my-day',
+        icon: '☀️',
       },
       {
-        title: 'Building Your Application',
-        url: '#',
-        items: [
-          {
-            title: 'Routing',
-            url: '#',
-          },
-          {
-            title: 'Data Fetching',
-            url: '#',
-            isActive: true,
-          },
-          {
-            title: 'Rendering',
-            url: '#',
-          },
-          {
-            title: 'Caching',
-            url: '#',
-          },
-          {
-            title: 'Styling',
-            url: '#',
-          },
-          {
-            title: 'Optimizing',
-            url: '#',
-          },
-          {
-            title: 'Configuring',
-            url: '#',
-          },
-          {
-            title: 'Testing',
-            url: '#',
-          },
-          {
-            title: 'Authentication',
-            url: '#',
-          },
-          {
-            title: 'Deploying',
-            url: '#',
-          },
-          {
-            title: 'Upgrading',
-            url: '#',
-          },
-          {
-            title: 'Examples',
-            url: '#',
-          },
-        ],
+        title: 'Important',
+        url: 'important',
+        icon: '⭐',
       },
       {
-        title: 'API Reference',
-        url: '#',
-        items: [
-          {
-            title: 'Components',
-            url: '#',
-          },
-          {
-            title: 'File Conventions',
-            url: '#',
-          },
-          {
-            title: 'Functions',
-            url: '#',
-          },
-          {
-            title: 'next.config.js Options',
-            url: '#',
-          },
-          {
-            title: 'CLI',
-            url: '#',
-          },
-          {
-            title: 'Edge Runtime',
-            url: '#',
-          },
-        ],
+        title: 'Planned',
+        url: 'planned',
+        icon: '📅',
       },
       {
-        title: 'Architecture',
-        url: '#',
-        items: [
-          {
-            title: 'Accessibility',
-            url: '#',
-          },
-          {
-            title: 'Fast Refresh',
-            url: '#',
-          },
-          {
-            title: 'Next.js Compiler',
-            url: '#',
-          },
-          {
-            title: 'Supported Browsers',
-            url: '#',
-          },
-          {
-            title: 'Turbopack',
-            url: '#',
-          },
-        ],
-      },
-      {
-        title: 'Community',
-        url: '#',
-        items: [
-          {
-            title: 'Contribution Guide',
-            url: '#',
-          },
-        ],
+        title: 'Tasks',
+        url: 'default',
+        icon: '✅',
       },
     ],
   }
 </script>
 
 <script lang="ts">
+  import { getMappingContext } from '$lib/contexts/mapping'
   import * as Sidebar from '$lib/components/ui/sidebar/index.js'
   import NotionDbSwitcher from './notion-db-switcher.svelte'
   import type { DataSourceObjectResponse } from '@notionhq/client'
@@ -151,6 +37,35 @@
     selectedDataSourceId: string
   }
   let { dataSources, selectedDataSourceId }: Props = $props()
+
+  let selectedDataSource = $derived.by(() =>
+    dataSources.find((ds) => ds.id === selectedDataSourceId)
+  )
+
+  let mapping = getMappingContext()
+  let categoryPropertyId = $derived(
+    mapping.propertyMappings['category']?.notionPropertyId
+  )
+
+  let categories = $derived.by(() => {
+    if (!selectedDataSource || !categoryPropertyId) return []
+
+    let categoryProperty = Object.values(selectedDataSource.properties).find(
+      (prop) => prop.id === categoryPropertyId
+    )
+
+    if (
+      !categoryProperty ||
+      categoryProperty.type !== 'select' ||
+      !categoryProperty.select.options
+    ) {
+      return []
+    }
+
+    return categoryProperty.select.options
+  })
+
+  $inspect('categories', categories)
 </script>
 
 <Sidebar.Root variant="floating">
@@ -160,7 +75,7 @@
   <Sidebar.Content>
     <Sidebar.Group>
       <Sidebar.Menu class="gap-2">
-        {#each data.navMain as item (item.title)}
+        {#each data.mainLists as item (item.title)}
           <Sidebar.MenuItem>
             <Sidebar.MenuButton>
               {#snippet child({ props })}
@@ -169,19 +84,22 @@
                 </a>
               {/snippet}
             </Sidebar.MenuButton>
-            {#if item.items?.length}
-              <Sidebar.MenuSub class="ml-0 border-l-0 px-1.5">
-                {#each item.items as subItem (subItem.title)}
-                  <Sidebar.MenuSubItem>
-                    <Sidebar.MenuSubButton isActive={subItem.isActive}>
-                      {#snippet child({ props })}
-                        <a href={subItem.url} {...props}>{subItem.title}</a>
-                      {/snippet}
-                    </Sidebar.MenuSubButton>
-                  </Sidebar.MenuSubItem>
-                {/each}
-              </Sidebar.MenuSub>
-            {/if}
+          </Sidebar.MenuItem>
+        {/each}
+      </Sidebar.Menu>
+    </Sidebar.Group>
+    <Sidebar.Separator />
+    <Sidebar.Group>
+      <Sidebar.Menu class="gap-2">
+        {#each categories as category (category.id)}
+          <Sidebar.MenuItem>
+            <Sidebar.MenuButton>
+              {#snippet child({ props })}
+                <a href={category.id} class="font-medium" {...props}>
+                  {category.name}
+                </a>
+              {/snippet}
+            </Sidebar.MenuButton>
           </Sidebar.MenuItem>
         {/each}
       </Sidebar.Menu>

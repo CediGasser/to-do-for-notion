@@ -1,7 +1,7 @@
 <script lang="ts">
   import type { PageObjectResponse } from '@notionhq/client'
   import Checkbox from './checkbox.svelte'
-  import { getMappingContext } from '$lib/abstraction/mapping.svelte'
+  import { getMappingContext } from '$lib/contexts/mapping'
   import Title from './title.svelte'
 
   interface Props {

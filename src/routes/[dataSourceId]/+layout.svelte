@@ -2,7 +2,7 @@
   import * as Sidebar from '$lib/components/ui/sidebar'
   import { Separator } from '$lib/components/ui/separator'
   import AppSidebar from '$lib/components/app-sidebar.svelte'
-  import { setMappingContext } from '$lib/abstraction/mapping.svelte'
+  import { setMappingContext } from '$lib/contexts/mapping'
 
   let { children, data } = $props()
 
