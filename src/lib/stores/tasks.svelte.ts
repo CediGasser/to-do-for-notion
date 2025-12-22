@@ -6,7 +6,6 @@
 import type { Task } from '$lib/models/task'
 import type { FieldMappings } from '$lib/models/field-mapping'
 import { pageToTask } from '$lib/models/task'
-import { syncStore } from './sync-state.svelte'
 import type { PageObjectResponse } from '@notionhq/client'
 
 /**

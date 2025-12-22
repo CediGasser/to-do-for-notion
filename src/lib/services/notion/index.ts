@@ -1,8 +1,3 @@
-/**
- * @file src/lib/services/notion/index.ts
- * @description Notion service exports
- */
-
 export { notionClient } from './client'
 export {
   taskFilterToNotionFilter,

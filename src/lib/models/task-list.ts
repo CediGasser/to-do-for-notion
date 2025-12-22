@@ -6,7 +6,6 @@
 import type { Task } from './task'
 import type { TaskListDefinition, TaskListFilter } from '$lib/config/types'
 import type { FieldMappings } from './field-mapping'
-import { isTaskCompleted } from './task'
 
 /**
  * Runtime task list with resolved filters

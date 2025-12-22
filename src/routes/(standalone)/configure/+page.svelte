@@ -2,8 +2,14 @@
   import Select from '$lib/components/custom/select.svelte'
   import * as Field from '$lib/components/ui/field'
   import { FieldMappingBuilder } from '$lib/abstraction/field-mapping-builder.svelte'
-  import { DataSourceConfigManager, type DataSourceConfig } from '$lib/config/index'
-  import { DEFAULT_SYSTEM_LISTS, type TaskListDefinition } from '$lib/config/types'
+  import {
+    DataSourceConfigManager,
+    type DataSourceConfig,
+  } from '$lib/config/index'
+  import {
+    DEFAULT_SYSTEM_LISTS,
+    type TaskListDefinition,
+  } from '$lib/config/types'
   import Input from '$lib/components/ui/input/input.svelte'
   import { goto } from '$app/navigation'
 
@@ -138,7 +144,9 @@
         </Field.Description>
         <Field.Group>
           <Field.Field>
-            <Field.Label for="property-mapping-title">Title Property</Field.Label>
+            <Field.Label for="property-mapping-title"
+              >Title Property</Field.Label
+            >
             <Select
               id="property-mapping-title"
               items={builder.getPossiblePropertiesFor('title')}
@@ -277,13 +285,17 @@
         <Field.Set>
           <Field.Legend>Task Lists</Field.Legend>
           <Field.Description>
-            Based on your category field, we suggest creating these lists. Uncheck
-            any you don't want.
+            Based on your category field, we suggest creating these lists.
+            Uncheck any you don't want.
           </Field.Description>
           <div class="space-y-2 mt-4">
             {#each suggestedTaskLists.filter((l) => l.type === 'custom') as list (list.id)}
               <label
-                class="flex items-center gap-3 p-3 rounded-lg border cursor-pointer hover:bg-muted/50 transition-colors {selectedCustomLists.has(list.id) ? 'bg-muted/30' : ''}"
+                class="flex items-center gap-3 p-3 rounded-lg border cursor-pointer hover:bg-muted/50 transition-colors {selectedCustomLists.has(
+                  list.id
+                )
+                  ? 'bg-muted/30'
+                  : ''}"
               >
                 <input
                   type="checkbox"

@@ -1,8 +1,3 @@
-/**
- * @file src/lib/models/index.ts
- * @description Model exports
- */
-
 export {
   type BasePropertyMapping,
   type DirectPropertyMapping,

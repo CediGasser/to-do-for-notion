@@ -1,8 +1,3 @@
-/**
- * @file src/lib/stores/index.ts
- * @description Store exports
- */
-
 export {
   syncStore,
   type SyncOperation,

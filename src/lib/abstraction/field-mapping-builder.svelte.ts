@@ -6,14 +6,10 @@
  * that preserves Notion field type information for UI components.
  */
 
-import type {
-  DataSourceObjectResponse,
-  PageObjectResponse,
-} from '@notionhq/client'
+import type { DataSourceObjectResponse } from '@notionhq/client'
 import type { PropertyDefinition, OptionDefinition } from '$lib/types'
 import type {
   FieldMappings,
-  DirectPropertyMapping,
   EnumToBooleanMapping,
   CheckboxPropertyMapping,
 } from '$lib/models/field-mapping'

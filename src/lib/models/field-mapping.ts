@@ -1,14 +1,9 @@
 /**
  * @file src/lib/models/field-mapping.ts
- * @description Field mapping models that preserve Notion field type information
- *
- * This is the core of the mapping system. Unlike a pure adapter pattern,
- * we preserve the underlying Notion field type information so that UI
- * components can react to specific field types (e.g., showing a status
- * dropdown vs a checkbox for the completed field).
+ * @description Field mapping definitions between Notion properties and task fields
  */
 
-import type { PropertyDefinition, Property, OptionDefinition } from '$lib/types'
+import type { PropertyDefinition, OptionDefinition } from '$lib/types'
 
 /**
  * Base interface for all property mappings
@@ -74,7 +69,7 @@ export interface FieldMappings {
 }
 
 /**
- * Type guard to check if a mapping is enum to boolean
+ * Type guards for property mapping types
  */
 export function isEnumToBooleanMapping(
   mapping: PropertyMappingType
@@ -82,18 +77,12 @@ export function isEnumToBooleanMapping(
   return mapping.mappingType === 'enum_to_boolean'
 }
 
-/**
- * Type guard to check if a mapping is a checkbox
- */
 export function isCheckboxMapping(
   mapping: PropertyMappingType
 ): mapping is CheckboxPropertyMapping {
   return mapping.mappingType === 'checkbox'
 }
 
-/**
- * Type guard to check if a mapping is direct
- */
 export function isDirectMapping(
   mapping: PropertyMappingType
 ): mapping is DirectPropertyMapping {
@@ -101,7 +90,7 @@ export function isDirectMapping(
 }
 
 /**
- * Creates a direct property mapping
+ * Factory functions to create mappings
  */
 export function createDirectMapping(
   notionPropertyId: string,
@@ -116,9 +105,6 @@ export function createDirectMapping(
   }
 }
 
-/**
- * Creates an enum to boolean mapping
- */
 export function createEnumToBooleanMapping(
   notionPropertyId: string,
   sourceType: 'status' | 'select',
@@ -136,9 +122,6 @@ export function createEnumToBooleanMapping(
   }
 }
 
-/**
- * Creates a checkbox property mapping
- */
 export function createCheckboxMapping(
   notionPropertyId: string,
   propertyName: string

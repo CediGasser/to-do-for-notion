@@ -1,6 +1,7 @@
 <script lang="ts">
   import * as Sidebar from '$lib/components/ui/sidebar/index.js'
   import NotionDbSwitcher from './notion-db-switcher.svelte'
+  import { syncStore } from '$lib/stores/sync-state.svelte'
   import type { DataSourceObjectResponse } from '@notionhq/client'
   import type { TaskListDefinition } from '$lib/config/types'
   import { DEFAULT_SYSTEM_LISTS } from '$lib/config/types'
@@ -66,15 +67,26 @@
     {/if}
   </Sidebar.Content>
   <Sidebar.Footer>
-    <Sidebar.MenuItem>
-      <Sidebar.MenuButton>
-        {#snippet child({ props })}
-          <a href="/configure" class="font-medium" {...props}>
-            <SettingsIcon size="4" />
-            configure...
-          </a>
-        {/snippet}
-      </Sidebar.MenuButton>
-    </Sidebar.MenuItem>
+    <Sidebar.Menu>
+      <Sidebar.MenuItem class="flex flex-row justify-center items-center">
+        <Sidebar.MenuButton>
+          {#snippet child({ props })}
+            <a href="/configure" class="font-medium" {...props}>
+              <SettingsIcon size="4" />
+            </a>
+          {/snippet}
+        </Sidebar.MenuButton>
+        {#if syncStore.isSyncing}
+          <div
+            class="flex justify-center items-center gap-2 text-muted-foreground"
+          >
+            <div
+              class="animate-spin h-4 w-4 border-2 border-primary border-t-transparent rounded-full"
+            ></div>
+            <span class="text-sm">Syncing...</span>
+          </div>
+        {/if}
+      </Sidebar.MenuItem>
+    </Sidebar.Menu>
   </Sidebar.Footer>
 </Sidebar.Root>

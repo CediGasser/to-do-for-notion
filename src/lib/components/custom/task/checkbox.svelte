@@ -1,5 +1,4 @@
 <script lang="ts">
-  import type { Property } from '$lib/types'
   import type { MappedFieldValue } from '$lib/models/task'
   import type {
     EnumToBooleanMapping,
