@@ -1,7 +1,7 @@
-import { getDataSources } from '$lib/notion'
+import { notionClient } from '$lib/services/notion/client'
 
-export const load = async ({ params }) => {
-  const dataSources = await getDataSources()
+export const load = async () => {
+  const dataSources = await notionClient.getDataSources()
 
   return {
     dataSources,

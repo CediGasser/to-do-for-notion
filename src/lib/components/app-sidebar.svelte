@@ -1,71 +1,26 @@
-<script lang="ts" module>
-  // sample data
-  const data = {
-    mainLists: [
-      {
-        title: 'My Day',
-        url: 'my-day',
-        icon: '☀️',
-      },
-      {
-        title: 'Important',
-        url: 'important',
-        icon: '⭐',
-      },
-      {
-        title: 'Planned',
-        url: 'planned',
-        icon: '📅',
-      },
-      {
-        title: 'Tasks',
-        url: 'default',
-        icon: '✅',
-      },
-    ],
-  }
-</script>
-
 <script lang="ts">
-  import { getMappingContext } from '$lib/contexts/mapping'
   import * as Sidebar from '$lib/components/ui/sidebar/index.js'
   import NotionDbSwitcher from './notion-db-switcher.svelte'
   import type { DataSourceObjectResponse } from '@notionhq/client'
+  import type { TaskListDefinition } from '$lib/config/types'
+  import { DEFAULT_SYSTEM_LISTS } from '$lib/config/types'
+  import SettingsIcon from '@lucide/svelte/icons/settings-2'
 
   interface Props {
     dataSources: DataSourceObjectResponse[]
     selectedDataSourceId: string
+    taskLists?: TaskListDefinition[]
   }
-  let { dataSources, selectedDataSourceId }: Props = $props()
+  let { dataSources, selectedDataSourceId, taskLists = [] }: Props = $props()
 
-  let selectedDataSource = $derived.by(() =>
-    dataSources.find((ds) => ds.id === selectedDataSourceId)
+  // Separate system lists and custom lists
+  let systemLists = $derived(
+    taskLists.filter((list) => list.type === 'system').length > 0
+      ? taskLists.filter((list) => list.type === 'system')
+      : DEFAULT_SYSTEM_LISTS
   )
 
-  let mapping = getMappingContext()
-  let categoryPropertyId = $derived(
-    mapping.propertyMappings['category']?.notionPropertyId
-  )
-
-  let categories = $derived.by(() => {
-    if (!selectedDataSource || !categoryPropertyId) return []
-
-    let categoryProperty = Object.values(selectedDataSource.properties).find(
-      (prop) => prop.id === categoryPropertyId
-    )
-
-    if (
-      !categoryProperty ||
-      categoryProperty.type !== 'select' ||
-      !categoryProperty.select.options
-    ) {
-      return []
-    }
-
-    return categoryProperty.select.options
-  })
-
-  $inspect('categories', categories)
+  let customLists = $derived(taskLists.filter((list) => list.type === 'custom'))
 </script>
 
 <Sidebar.Root variant="floating">
@@ -75,12 +30,13 @@
   <Sidebar.Content>
     <Sidebar.Group>
       <Sidebar.Menu class="gap-2">
-        {#each data.mainLists as item (item.title)}
+        {#each systemLists as list (list.id)}
           <Sidebar.MenuItem>
             <Sidebar.MenuButton>
               {#snippet child({ props })}
-                <a href={item.url} class="font-medium" {...props}>
-                  {item.title}
+                <a href={list.id} class="font-medium" {...props}>
+                  <span class="mr-2">{list.icon}</span>
+                  {list.name}
                 </a>
               {/snippet}
             </Sidebar.MenuButton>
@@ -88,21 +44,37 @@
         {/each}
       </Sidebar.Menu>
     </Sidebar.Group>
-    <Sidebar.Separator />
-    <Sidebar.Group>
-      <Sidebar.Menu class="gap-2">
-        {#each categories as category (category.id)}
-          <Sidebar.MenuItem>
-            <Sidebar.MenuButton>
-              {#snippet child({ props })}
-                <a href={category.id} class="font-medium" {...props}>
-                  {category.name}
-                </a>
-              {/snippet}
-            </Sidebar.MenuButton>
-          </Sidebar.MenuItem>
-        {/each}
-      </Sidebar.Menu>
-    </Sidebar.Group>
+    {#if customLists.length > 0}
+      <Sidebar.Separator />
+      <Sidebar.Group>
+        <Sidebar.GroupLabel>Lists</Sidebar.GroupLabel>
+        <Sidebar.Menu class="gap-2">
+          {#each customLists as list (list.id)}
+            <Sidebar.MenuItem>
+              <Sidebar.MenuButton>
+                {#snippet child({ props })}
+                  <a href={list.id} class="font-medium" {...props}>
+                    <span class="mr-2">{list.icon}</span>
+                    {list.name}
+                  </a>
+                {/snippet}
+              </Sidebar.MenuButton>
+            </Sidebar.MenuItem>
+          {/each}
+        </Sidebar.Menu>
+      </Sidebar.Group>
+    {/if}
   </Sidebar.Content>
+  <Sidebar.Footer>
+    <Sidebar.MenuItem>
+      <Sidebar.MenuButton>
+        {#snippet child({ props })}
+          <a href="/configure" class="font-medium" {...props}>
+            <SettingsIcon size="4" />
+            configure...
+          </a>
+        {/snippet}
+      </Sidebar.MenuButton>
+    </Sidebar.MenuItem>
+  </Sidebar.Footer>
 </Sidebar.Root>

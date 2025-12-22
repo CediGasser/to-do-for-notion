@@ -1,20 +1,18 @@
 <script lang="ts">
-  import type { Property } from '$lib/types'
+  import type { MappedFieldValue } from '$lib/models/task'
+  import type { DirectPropertyMapping } from '$lib/models/field-mapping'
+  import { getTitleValue } from '$lib/services/notion/types'
 
   interface Props {
-    property: Property
+    /** The mapped field value containing property and mapping info */
+    field: MappedFieldValue<DirectPropertyMapping>
   }
-  let { property = $bindable() }: Props = $props()
+  let { field }: Props = $props()
+
+  // Extract the title text
+  let titleText = $derived(getTitleValue(field.property))
 </script>
 
-{#if property.type === 'title'}
-  <h3 class="text-lg">
-    {#each property.title as titlePart}
-      {#if titlePart.type === 'text'}
-        {titlePart.text.content}
-      {/if}
-    {/each}
-  </h3>
-{:else}
-  <p class="text-lg font-semibold">-</p>
-{/if}
+<h3 class="text-lg font-medium flex-1">
+  {titleText || 'Untitled'}
+</h3>

@@ -1,5 +1,4 @@
 <script lang="ts">
-  import { goto } from '$app/navigation'
   import * as DropdownMenu from '$lib/components/ui/dropdown-menu/index.js'
   import * as Sidebar from '$lib/components/ui/sidebar/index.js'
   import CheckIcon from '@lucide/svelte/icons/check'
@@ -17,10 +16,6 @@
   let selectedDataSource = $derived.by(() =>
     dataSources.find((ds) => ds.id === selectedDataSourceId)
   )
-
-  const handleSelect = () => {
-    goto(`/${selectedDataSourceId}/default`)
-  }
 </script>
 
 <Sidebar.Menu>
